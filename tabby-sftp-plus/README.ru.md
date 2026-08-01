@@ -1,4 +1,4 @@
-<!-- Язык: [English](README.md) · Русский -->
+[English](README.md) · **Русский**
 
 # Tabby SFTP+
 
