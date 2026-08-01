@@ -1,0 +1,15 @@
+.sftp-modal.d-flex.flex-column(
+    cdkDrag,
+    cdkDragRootElement='.modal-dialog',
+    cdkDragBoundary='.modal',
+)
+    .sftp-modal-title.d-flex.align-items-center.px-3(cdkDragHandle)
+        i.fas.fa-server.me-2
+        strong.me-2 {{ sessionLabel }}
+        span.text-muted · SFTP
+        span.flex-fill
+        i.fas.fa-grip-lines.grip.me-3
+        button.btn.btn-sm.btn-link.close-btn.px-1((click)='close()', title='Close')
+            i.fas.fa-times
+    .sftp-modal-body.flex-fill
+        sftp-browser([session]='session', [sessionLabel]='sessionLabel', [compact]='true')

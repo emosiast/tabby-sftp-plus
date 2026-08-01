@@ -1,0 +1,33 @@
+{
+  "name": "tabby-sftp-plus",
+  "version": "0.1.0",
+  "description": "A nicer dual-pane SFTP experience for Tabby",
+  "keywords": [
+    "tabby-builtin-plugin"
+  ],
+  "main": "dist/index.js",
+  "typings": "typings/index.d.ts",
+  "scripts": {
+    "build": "webpack --progress --color",
+    "watch": "webpack --progress --color --watch"
+  },
+  "files": [
+    "dist",
+    "typings"
+  ],
+  "author": "tabbyfork",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "20.3.1"
+  },
+  "peerDependencies": {
+    "@angular/common": "^15",
+    "@angular/core": "^15",
+    "@angular/forms": "^15",
+    "@ng-bootstrap/ng-bootstrap": "^14",
+    "rxjs": "^7",
+    "tabby-core": "*",
+    "tabby-ssh": "*",
+    "tabby-terminal": "*"
+  }
+}

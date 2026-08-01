@@ -32,6 +32,7 @@ export const builtinPlugins = [
     'tabby-plugin-manager',
     'tabby-linkifier',
     'tabby-auto-sudo-password',
+    'tabby-sftp-plus',
 ]
 
 export const packagesWithDocs = [

@@ -1,0 +1,15 @@
+.modal-header
+    h5.modal-title {{ title }}
+.modal-body
+    label(*ngIf='prompt') {{ prompt }}
+    .w-100
+        input.form-control(
+            #input,
+            type='text',
+            [(ngModel)]='value',
+            (keyup.enter)='confirm()',
+            autofocus,
+        )
+.modal-footer
+    button.btn.btn-primary((click)='confirm()') {{ confirmLabel }}
+    button.btn.btn-secondary((click)='cancel()') Cancel

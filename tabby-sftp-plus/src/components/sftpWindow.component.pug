@@ -1,0 +1,33 @@
+.sftp-window.d-flex.flex-column
+    .sftp-titlebar.d-flex.align-items-center
+        .tab-strip.d-flex.align-items-center.flex-fill
+            .sftp-tab(
+                *ngFor='let t of tabs; trackBy: trackTab',
+                [class.active]='t.id === activeId',
+                (mousedown)='selectTab(t.id)',
+                [title]='t.label',
+            )
+                i.fas.fa-server.me-2
+                span.tab-label {{ t.label }}
+                button.tab-close(
+                    (mousedown)='$event.stopPropagation()',
+                    (click)='closeTab(t.id)',
+                    title='Close tab',
+                )
+                    i.fas.fa-times
+        .win-controls.d-flex.align-items-center
+            button.win-btn(title='Minimize', (click)='controls?.minimize()')
+                i.far.fa-window-minimize
+            button.win-btn(title='Maximize', (click)='controls?.toggleMaximize()')
+                i.far.fa-window-maximize
+            button.win-btn.close(title='Close', (click)='controls?.close()')
+                i.fas.fa-times
+    .sftp-window-body.flex-fill
+        sftp-browser(
+            *ngFor='let t of tabs; trackBy: trackTab',
+            [hidden]='t.id !== activeId',
+            [session]='t.session',
+            [sessionLabel]='t.label',
+            [compact]='true',
+            (closeRequested)='closeTab(t.id)',
+        )

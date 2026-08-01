@@ -442,7 +442,25 @@ export class Window {
             this.touchBarControl.selectedIndex = selectedIndex
         })
 
-        this.window.webContents.setWindowOpenHandler(() => {
+        this.window.webContents.setWindowOpenHandler(details => {
+            // Allow the tabby-sftp-plus floating window (a same-context popup that
+            // reuses the live SFTP session); everything else stays denied.
+            if (details.frameName && details.frameName.startsWith('sftp-plus')) {
+                return {
+                    action: 'allow',
+                    overrideBrowserWindowOptions: {
+                        alwaysOnTop: true,
+                        autoHideMenuBar: true,
+                        frame: false,
+                        backgroundColor: '#1e2228',
+                        webPreferences: {
+                            nodeIntegration: true,
+                            contextIsolation: false,
+                            sandbox: false,
+                        },
+                    },
+                }
+            }
             return { action: 'deny' }
         })
 

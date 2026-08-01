@@ -1,0 +1,279 @@
+.sftp-plus
+    //- Top bar: which connection this SFTP belongs to
+    .topbar.d-flex.align-items-center.px-3(*ngIf='!compact')
+        i.fas.fa-server.me-2
+        strong.me-2 {{ sessionLabel }}
+        span.text-muted · SFTP
+        span.flex-fill
+        span.status.text-muted(*ngIf='!sftp && !remoteError') Connecting…
+        span.status.text-danger(*ngIf='remoteError') offline
+
+    //- Name filter (Ctrl+F or the search button) — filters both panes
+    .filter-bar.d-flex.align-items-center.px-2(*ngIf='showFilter')
+        i.fas.fa-search.me-2
+        input.form-control.form-control-sm.flex-fill(
+            #filterInput,
+            [(ngModel)]='filterText',
+            placeholder='Filter by name…',
+            (keyup.escape)='closeFilter()',
+        )
+        button.btn.btn-sm.btn-link.ms-1((click)='closeFilter()', title='Close (Esc)')
+            i.fas.fa-times
+
+    .panes.d-flex.flex-fill
+        //- Local pane
+        .pane.d-flex.flex-column(
+            [class.active]='activeSide === "local"',
+            (click)='activeSide = "local"',
+        )
+            .pane-header.d-flex.align-items-center
+                span.pane-label.me-2
+                    i.fas.fa-desktop.me-1
+                    | This PC
+                button.btn.btn-sm.btn-link.px-1((click)='localBackNav()', title='Back', [disabled]='!canLocalBack')
+                    i.fas.fa-arrow-left
+                button.btn.btn-sm.btn-link.px-1((click)='localForwardNav()', title='Forward', [disabled]='!canLocalForward')
+                    i.fas.fa-arrow-right
+                button.btn.btn-sm.btn-link.px-1.up-btn(
+                    (click)='localUp()',
+                    title='Up (drop a file here to move it out)',
+                    [class.drop-target]='dropParentSide === "local"',
+                    (dragover)='onDragOverParent("local", $event)',
+                    (dragleave)='dropParentSide = null',
+                    (drop)='onDropParent("local", $event)',
+                )
+                    i.fas.fa-arrow-up
+                .path.flex-fill.text-truncate.mx-1(title='{{ localPath }}') {{ localPath }}
+                button.btn.btn-sm.btn-link.px-1(
+                    (click)='toggleLocalBookmark()',
+                    title='{{ localBookmarked ? "Remove bookmark" : "Bookmark this folder" }}',
+                )
+                    i.fa-star([class.fas]='localBookmarked', [class.far]='!localBookmarked', [class.text-warning]='localBookmarked')
+                button.btn.btn-sm.btn-link.px-1((click)='newFolderLocal()', title='New folder')
+                    i.fas.fa-folder-plus
+                button.btn.btn-sm.btn-link.px-1((click)='toggleFilter()', title='Filter (Ctrl+F)')
+                    i.fas.fa-search
+                button.btn.btn-sm.btn-link.px-1((click)='reloadLocal()', title='Refresh')
+                    i.fas.fa-sync
+            .bookmarks.d-flex.align-items-center.flex-wrap(*ngIf='localBookmarks.length')
+                .bookmark-chip(*ngFor='let b of localBookmarks', (click)='goLocal(b)', title='{{ b }}')
+                    i.fas.fa-star.me-1
+                    span.text-truncate {{ bookmarkLabel(b) }}
+                    i.fas.fa-times.remove.ms-1((click)='$event.stopPropagation(); removeLocalBookmark(b)')
+            .col-head.d-flex.align-items-center
+                span.name.flex-fill.sortable((click)='setSort("name")')
+                    | Name
+                    i.sort-arrow.ms-1.fas(*ngIf='sortKey === "name"', [class.fa-caret-up]='sortAsc', [class.fa-caret-down]='!sortAsc')
+                span.modified.sortable((click)='setSort("modified")')
+                    | Modified
+                    i.sort-arrow.ms-1.fas(*ngIf='sortKey === "modified"', [class.fa-caret-up]='sortAsc', [class.fa-caret-down]='!sortAsc')
+                span.size.sortable((click)='setSort("size")')
+                    i.sort-arrow.me-1.fas(*ngIf='sortKey === "size"', [class.fa-caret-up]='sortAsc', [class.fa-caret-down]='!sortAsc')
+                    | Size
+            .pane-body.flex-fill(
+                [class.drag-over]='dragOverSide === "local"',
+                (dragover)='onDragOver("local", $event)',
+                (dragleave)='onDragLeavePane("local")',
+                (drop)='onDropPane("local", $event)',
+                (contextmenu)='showLocalPaneMenu($event)',
+            )
+                .spinner-overlay(*ngIf='localLoading')
+                    i.fas.fa-circle-notch.fa-spin
+                .empty.text-muted(*ngIf='!localLoading && !localError && localEntries.length === 0') Empty folder
+                .error.p-2.text-danger(*ngIf='localError') {{ localError }}
+                .row-item.d-flex.align-items-center(
+                    *ngFor='let entry of visibleEntries("local"); trackBy: trackByPath',
+                    draggable='true',
+                    [class.drop-target]='entry === dragOverEntry',
+                    (dragstart)='onDragStart(entry, "local", $event)',
+                    (dragend)='onDragEnd()',
+                    (dragover)='onDragOverEntry(entry, "local", $event)',
+                    (drop)='onDropEntry(entry, "local", $event)',
+                    (dblclick)='entry.isDirectory ? openLocal(entry) : upload(entry)',
+                    (contextmenu)='$event.stopPropagation(); showLocalMenu(entry, $event)',
+                )
+                    i.icon.me-2([class]='entry.icon')
+                    .name.flex-fill.text-truncate(title='{{ entry.name }}') {{ entry.name }}
+                    .modified.text-muted {{ entry.modifiedLabel }}
+                    .size.text-muted {{ entry.sizeLabel }}
+                    button.btn.btn-sm.btn-link.action.px-2(
+                        *ngIf='!entry.isDirectory && sftp',
+                        (click)='$event.stopPropagation(); upload(entry)',
+                        title='Upload to server',
+                    )
+                        i.fas.fa-arrow-right
+
+        //- Remote pane
+        .pane.d-flex.flex-column(
+            [class.active]='activeSide === "remote"',
+            (click)='activeSide = "remote"',
+        )
+            .pane-header.d-flex.align-items-center
+                span.pane-label.me-2
+                    i.fas.fa-server.me-1
+                    | {{ sessionLabel }}
+                button.btn.btn-sm.btn-link.px-1((click)='remoteBackNav()', title='Back', [disabled]='!sftp || !canRemoteBack')
+                    i.fas.fa-arrow-left
+                button.btn.btn-sm.btn-link.px-1((click)='remoteForwardNav()', title='Forward', [disabled]='!sftp || !canRemoteForward')
+                    i.fas.fa-arrow-right
+                button.btn.btn-sm.btn-link.px-1.up-btn(
+                    (click)='remoteUp()',
+                    title='Up (drop a file here to move it out)',
+                    [disabled]='!sftp',
+                    [class.drop-target]='dropParentSide === "remote"',
+                    (dragover)='onDragOverParent("remote", $event)',
+                    (dragleave)='dropParentSide = null',
+                    (drop)='onDropParent("remote", $event)',
+                )
+                    i.fas.fa-arrow-up
+                .path.flex-fill.text-truncate.mx-1(title='{{ remotePath }}') {{ remotePath }}
+                button.btn.btn-sm.btn-link.px-1(
+                    (click)='toggleRemoteBookmark()',
+                    title='{{ remoteBookmarked ? "Remove bookmark" : "Bookmark this folder" }}',
+                    [disabled]='!sftp',
+                )
+                    i.fa-star([class.fas]='remoteBookmarked', [class.far]='!remoteBookmarked', [class.text-warning]='remoteBookmarked')
+                button.btn.btn-sm.btn-link.px-1((click)='newFolderRemote()', title='New folder', [disabled]='!sftp')
+                    i.fas.fa-folder-plus
+                button.btn.btn-sm.btn-link.px-1((click)='toggleFilter()', title='Filter (Ctrl+F)')
+                    i.fas.fa-search
+                button.btn.btn-sm.btn-link.px-1((click)='reloadRemote()', title='Refresh', [disabled]='!sftp')
+                    i.fas.fa-sync
+            .bookmarks.d-flex.align-items-center.flex-wrap(*ngIf='remoteBookmarks.length')
+                .bookmark-chip(*ngFor='let b of remoteBookmarks', (click)='goRemote(b)', title='{{ b }}')
+                    i.fas.fa-star.me-1
+                    span.text-truncate {{ bookmarkLabel(b) }}
+                    i.fas.fa-times.remove.ms-1((click)='$event.stopPropagation(); removeRemoteBookmark(b)')
+            .col-head.d-flex.align-items-center
+                span.action-spacer
+                span.name.flex-fill.sortable((click)='setSort("name")')
+                    | Name
+                    i.sort-arrow.ms-1.fas(*ngIf='sortKey === "name"', [class.fa-caret-up]='sortAsc', [class.fa-caret-down]='!sortAsc')
+                span.modified.sortable((click)='setSort("modified")')
+                    | Modified
+                    i.sort-arrow.ms-1.fas(*ngIf='sortKey === "modified"', [class.fa-caret-up]='sortAsc', [class.fa-caret-down]='!sortAsc')
+                span.size.sortable((click)='setSort("size")')
+                    i.sort-arrow.me-1.fas(*ngIf='sortKey === "size"', [class.fa-caret-up]='sortAsc', [class.fa-caret-down]='!sortAsc')
+                    | Size
+            .pane-body.flex-fill(
+                [class.drag-over]='dragOverSide === "remote"',
+                (dragover)='onDragOver("remote", $event)',
+                (dragleave)='onDragLeavePane("remote")',
+                (drop)='onDropPane("remote", $event)',
+                (contextmenu)='showRemotePaneMenu($event)',
+            )
+                .spinner-overlay(*ngIf='remoteLoading')
+                    i.fas.fa-circle-notch.fa-spin
+                .empty.text-muted(*ngIf='!remoteLoading && sftp && !remoteError && remoteEntries.length === 0') Empty folder
+                .error.p-2.text-danger(*ngIf='remoteError') {{ remoteError }}
+                .row-item.d-flex.align-items-center(
+                    *ngFor='let entry of visibleEntries("remote"); trackBy: trackByPath',
+                    draggable='true',
+                    [class.drop-target]='entry === dragOverEntry',
+                    (dragstart)='onDragStart(entry, "remote", $event)',
+                    (dragend)='onDragEnd()',
+                    (dragover)='onDragOverEntry(entry, "remote", $event)',
+                    (drop)='onDropEntry(entry, "remote", $event)',
+                    (dblclick)='entry.isDirectory ? openRemote(entry) : download(entry)',
+                    (contextmenu)='$event.stopPropagation(); showRemoteMenu(entry, $event)',
+                )
+                    button.btn.btn-sm.btn-link.action.px-2(
+                        *ngIf='!entry.isDirectory',
+                        (click)='$event.stopPropagation(); download(entry)',
+                        title='Download to this PC',
+                    )
+                        i.fas.fa-arrow-left
+                    span.action-spacer(*ngIf='entry.isDirectory')
+                    i.icon.me-2([class]='entry.icon')
+                    .name.flex-fill.text-truncate(title='{{ entry.name }}') {{ entry.name }}
+                    .modified.text-muted {{ entry.modifiedLabel }}
+                    .size.text-muted {{ entry.sizeLabel }}
+
+    //- Transfer queue
+    .queue(*ngIf='queue.length')
+        .queue-header.d-flex.align-items-center.px-3.py-1
+            i.fas.fa-list.me-2
+            strong.flex-fill Transfers
+            button.btn.btn-sm.btn-link((click)='clearFinishedQueue()') Clear finished
+        .queue-item(*ngFor='let item of queue')
+            .queue-row.d-flex.align-items-center.px-3
+                i.me-2.fas(
+                    [class.fa-arrow-up]='item.direction === "up"',
+                    [class.text-info]='item.direction === "up"',
+                    [class.fa-arrow-down]='item.direction === "down"',
+                    [class.text-success]='item.direction === "down"',
+                )
+                .flex-fill.text-truncate
+                    | {{ item.name }}
+                    span.text-muted.ms-2(*ngIf='item.status') {{ item.status }}
+                    span.text-warning.ms-2(*ngIf='isPaused(item)') paused
+                .text-danger.me-2(*ngIf='item.error') {{ item.error }}
+                .text-muted.me-2(*ngIf='item.done && isCancelled(item)') cancelled
+                .text-success.me-2(*ngIf='item.done && !item.error && !isCancelled(item)') ✓ done
+                template(*ngIf='!item.done && !item.error')
+                    .text-muted.me-2.queue-bytes {{ formatSize(itemCompleted(item)) }} / {{ formatSize(itemTotal(item)) }}
+                    .queue-pct.me-2(*ngIf='itemTotal(item)') {{ itemPercent(item) }}%
+                    button.btn.btn-sm.btn-link.queue-ctl(*ngIf='!isPaused(item)', (click)='pauseItem(item)', title='Pause')
+                        i.fas.fa-pause
+                    button.btn.btn-sm.btn-link.queue-ctl(*ngIf='isPaused(item)', (click)='resumeItem(item)', title='Resume')
+                        i.fas.fa-play
+                    button.btn.btn-sm.btn-link.queue-ctl((click)='cancelItem(item)', title='Cancel')
+                        i.fas.fa-times
+            .queue-progress(*ngIf='!item.done && !item.error && itemTotal(item)')
+                .queue-progress-fill([class.paused]='isPaused(item)', [style.width.%]='itemPercent(item)')
+
+    //- Built-in text editor (notepad-style, no temp file) — renders in the host window
+    .editor(*ngIf='editor')
+        .editor-head.d-flex.align-items-center
+            i.me-2([class]='editor.side === "remote" ? "fas fa-server" : "fas fa-desktop"')
+            span.editor-name.text-truncate {{ editor.name }}
+            span.editor-dirty.ms-2(*ngIf='editorDirty', title='Unsaved changes') ●
+            span.editor-path.text-truncate.ms-2(title='{{ editor.fullPath }}') {{ editor.fullPath }}
+            span.flex-fill
+            button.btn.btn-sm.btn-primary.me-2(
+                (click)='saveEditor()',
+                [disabled]='editor.loading || editor.saving || !editorDirty',
+                title='Save (Ctrl+S)',
+            )
+                i.fas.fa-save.me-1
+                | {{ editor.saving ? 'Saving…' : 'Save' }}
+            button.btn.btn-sm.btn-link.editor-close((click)='closeEditor()', title='Close')
+                i.fas.fa-times
+        .editor-confirm.d-flex.align-items-center.px-3(*ngIf='editorConfirmClose')
+            span.flex-fill Discard unsaved changes?
+            button.btn.btn-sm.btn-danger.me-2((click)='editor = null; editorConfirmClose = false') Discard
+            button.btn.btn-sm.btn-secondary((click)='cancelClose()') Keep editing
+        .editor-error.px-3.py-2.text-danger(*ngIf='editor.error') {{ editor.error }}
+        .editor-loading.flex-fill(*ngIf='editor.loading')
+            i.fas.fa-circle-notch.fa-spin
+        .editor-code.flex-fill(*ngIf='!editor.loading')
+            pre.editor-hl(#hl, [innerHTML]='editorHtml')
+            textarea.editor-area(
+                #ta,
+                [(ngModel)]='editor.content',
+                (ngModelChange)='highlightEditor()',
+                (keydown)='onEditorKey($event)',
+                (scroll)='hl.scrollTop = ta.scrollTop; hl.scrollLeft = ta.scrollLeft',
+                spellcheck='false',
+                wrap='off',
+                autofocus,
+            )
+
+    //- In-component dialog (prompt / confirm) — renders in the host window
+    .dialog-backdrop(*ngIf='dialog', (click)='dialogCancel()')
+        .dialog-box((click)='$event.stopPropagation()')
+            .dialog-title {{ dialog.title }}
+            .dialog-body
+                div(*ngIf='dialog.kind === "confirm"') {{ dialog.message }}
+                ng-container(*ngIf='dialog.kind === "prompt"')
+                    label.dialog-label(*ngIf='dialog.message') {{ dialog.message }}
+                    input.form-control(
+                        type='text',
+                        [(ngModel)]='dialog.value',
+                        (keyup.enter)='dialogConfirm()',
+                        (keyup.escape)='dialogCancel()',
+                        autofocus,
+                    )
+            .dialog-footer
+                button.btn.btn-sm.btn-primary((click)='dialogConfirm()') {{ dialog.confirmLabel }}
+                button.btn.btn-sm.btn-secondary((click)='dialogCancel()') Cancel

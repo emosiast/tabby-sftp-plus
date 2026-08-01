@@ -1,0 +1,446 @@
+:host {
+    display: flex;
+    flex: 1 1 0;
+    min-height: 0;
+    width: 100%;
+    height: 100%;
+}
+
+
+.sftp-plus {
+    // Derived from Tabby's theme vars so the panel adapts to light & dark themes
+    // instead of assuming a dark background.
+    --line: color-mix(in srgb, var(--theme-fg, #fff) 13%, transparent);
+    --line-soft: color-mix(in srgb, var(--theme-fg, #fff) 7%, transparent);
+    --hover: color-mix(in srgb, var(--theme-fg, #fff) 8%, transparent);
+    --accent: var(--theme-primary, var(--bs-primary, #4dabf7));
+    --accent-tint: color-mix(in srgb, var(--accent) 12%, transparent);
+
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+    position: relative;
+    color: var(--theme-fg);
+
+    // ---- Top bar ----
+    .topbar {
+        height: 36px;
+        flex: 0 0 36px;
+        border-bottom: 1px solid var(--line);
+        font-size: 13px;
+
+        .fa-server { opacity: 0.6; }
+        .status {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+    }
+
+    // ---- Filter bar ----
+    .filter-bar {
+        flex: 0 0 auto;
+        height: 34px;
+        border-bottom: 1px solid var(--line);
+        background: var(--theme-bg-more);
+
+        .fa-search { opacity: 0.6; font-size: 12px; }
+        .form-control {
+            background: var(--theme-bg);
+            color: var(--theme-fg);
+            border-color: var(--line);
+            height: 24px;
+            font-size: 12px;
+        }
+    }
+
+    // ---- Panes ----
+    .panes { min-height: 0; }
+
+    .pane {
+        flex: 1 1 0;
+        min-width: 0;
+        overflow: hidden;
+        // 2px accent rail on the active pane — the one signature cue, kept quiet.
+        border-top: 2px solid transparent;
+        transition: border-color 0.12s ease, background 0.12s ease;
+
+        & + .pane { border-left: 1px solid var(--line); }
+
+        &.active {
+            border-top-color: var(--accent);
+            .pane-label { color: var(--accent); }
+            .pane-header { background: var(--accent-tint); }
+        }
+    }
+
+    .pane-header {
+        flex: 0 0 auto;
+        padding: 5px 6px;
+        border-bottom: 1px solid var(--line-soft);
+        transition: background 0.12s ease;
+
+        .pane-label {
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+            opacity: 0.85;
+            white-space: nowrap;
+            transition: color 0.12s ease;
+        }
+        .path {
+            font-family: monospace;
+            font-size: 12px;
+            color: var(--theme-fg-less);
+        }
+        .btn {
+            line-height: 1;
+            color: var(--theme-fg-less);
+            &:hover { color: var(--theme-fg); }
+        }
+        .up-btn.drop-target {
+            color: var(--accent);
+            background: var(--accent-tint);
+            border-radius: 4px;
+            box-shadow: inset 0 0 0 1px var(--accent);
+        }
+    }
+
+    // ---- Column header ----
+    .col-head {
+        flex: 0 0 auto;
+        padding: 3px 8px;
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--theme-fg-less-2);
+        border-bottom: 1px solid var(--line-soft);
+
+        .size { width: 72px; text-align: right; }
+        .modified { width: 104px; text-align: right; padding-right: 10px; }
+        .action-spacer { width: 30px; }
+
+        .sortable {
+            cursor: pointer;
+            user-select: none;
+            display: inline-flex;
+            align-items: center;
+            &:hover { color: var(--theme-fg); }
+        }
+        .size.sortable { justify-content: flex-end; }
+        .sort-arrow { font-size: 10px; color: var(--accent); }
+    }
+
+    // ---- Rows ----
+    .pane-body {
+        position: relative;
+        overflow-y: auto;
+        min-height: 0;
+    }
+
+    .spinner-overlay {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: color-mix(in srgb, var(--theme-bg) 40%, transparent);
+        z-index: 5;
+        pointer-events: none;
+        i { font-size: 22px; opacity: 0.6; }
+    }
+
+    .empty {
+        padding: 20px;
+        text-align: center;
+        font-size: 13px;
+        color: var(--theme-fg-less-2);
+    }
+
+    .row-item {
+        padding: 4px 8px;
+        cursor: default;
+        user-select: none;
+        transition: background 0.08s ease;
+
+        &:hover { background: var(--hover); }
+
+        .icon {
+            width: 16px;
+            text-align: center;
+            flex: 0 0 16px;
+        }
+        .name { font-size: 13px; }
+        .size {
+            width: 72px;
+            text-align: right;
+            font-size: 11px;
+            white-space: nowrap;
+            color: var(--theme-fg-less);
+        }
+        .modified {
+            width: 104px;
+            text-align: right;
+            padding-right: 10px;
+            font-size: 11px;
+            white-space: nowrap;
+            color: var(--theme-fg-less-2);
+            font-variant-numeric: tabular-nums;
+        }
+        .action-spacer {
+            flex: 0 0 30px;
+            width: 30px;
+        }
+        .action {
+            opacity: 0;
+            line-height: 1;
+            color: var(--accent);
+            transition: opacity 0.1s ease;
+        }
+        &:hover .action { opacity: 0.85; }
+        .action:hover { opacity: 1; }
+    }
+
+    // ---- Drag & drop (native) ----
+    .pane-body.drag-over {
+        outline: 2px dashed var(--accent);
+        outline-offset: -2px;
+        background: var(--accent-tint);
+    }
+
+    .row-item.drop-target {
+        background: var(--accent-tint);
+        box-shadow: inset 0 0 0 1px var(--accent);
+    }
+
+    // ---- Bookmarks bar ----
+    .bookmarks {
+        flex: 0 0 auto;
+        gap: 4px;
+        padding: 4px 6px;
+        border-bottom: 1px solid var(--line-soft);
+    }
+
+    .bookmark-chip {
+        display: inline-flex;
+        align-items: center;
+        max-width: 140px;
+        padding: 1px 7px;
+        font-size: 11px;
+        border-radius: 10px;
+        cursor: pointer;
+        color: var(--theme-fg-less);
+        background: var(--hover);
+        border: 1px solid var(--line);
+        transition: background 0.1s ease, color 0.1s ease;
+
+        .fa-star { color: var(--bs-warning, #f5c518); opacity: 0.85; font-size: 9px; }
+        &:hover { background: var(--accent-tint); color: var(--theme-fg); }
+
+        .remove {
+            font-size: 9px;
+            opacity: 0;
+            transition: opacity 0.1s ease;
+        }
+        &:hover .remove { opacity: 0.7; }
+        .remove:hover { opacity: 1; color: var(--bs-danger, #dc3545); }
+    }
+
+    // ---- Built-in editor ----
+    .editor {
+        position: absolute;
+        inset: 0;
+        z-index: 30;
+        display: flex;
+        flex-direction: column;
+        background: var(--theme-bg);
+
+        .editor-head {
+            flex: 0 0 auto;
+            padding: 6px 8px 6px 12px;
+            border-bottom: 1px solid var(--line);
+            background: var(--theme-bg-more);
+            font-size: 13px;
+
+            .editor-name { font-weight: 600; }
+            .editor-dirty { color: var(--accent); font-size: 10px; }
+            .editor-path {
+                font-family: monospace;
+                font-size: 11px;
+                color: var(--theme-fg-less-2);
+                max-width: 40%;
+            }
+            .editor-close {
+                color: var(--theme-fg-less);
+                &:hover { color: var(--theme-fg); }
+            }
+        }
+
+        .editor-confirm {
+            flex: 0 0 auto;
+            padding-top: 6px;
+            padding-bottom: 6px;
+            background: color-mix(in srgb, var(--bs-danger, #dc3545) 16%, var(--theme-bg));
+            border-bottom: 1px solid var(--line);
+            font-size: 13px;
+        }
+
+        .editor-error {
+            flex: 0 0 auto;
+            font-size: 12px;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .editor-loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            i { font-size: 24px; opacity: 0.6; }
+        }
+
+        // Highlight overlay: a colored <pre> sits behind a transparent <textarea>,
+        // both sharing identical typography/padding so the caret lands on the text.
+        .editor-code {
+            position: relative;
+            min-height: 0;
+            overflow: hidden;
+        }
+
+        .editor-hl,
+        .editor-area {
+            position: absolute;
+            inset: 0;
+            margin: 0;
+            padding: 10px 12px;
+            font-family: monospace;
+            font-size: 13px;
+            line-height: 1.5;
+            tab-size: 4;
+            white-space: pre;
+            word-wrap: normal;
+            border: 0;
+        }
+
+        .editor-hl {
+            overflow: hidden;
+            pointer-events: none;
+            color: var(--theme-fg);
+            background: var(--theme-bg);
+
+            // ::ng-deep — the highlighted spans are injected via [innerHTML] and don't
+            // carry Angular's encapsulation attribute, so scoped rules wouldn't reach them.
+            ::ng-deep .tok-comment { color: var(--theme-fg-less-2); font-style: italic; }
+            ::ng-deep .tok-string { color: #98c379; }
+            ::ng-deep .tok-number { color: var(--bs-warning, #f5c518); }
+            ::ng-deep .tok-keyword { color: var(--accent); font-weight: 600; }
+        }
+
+        .editor-area {
+            width: 100%;
+            height: 100%;
+            resize: none;
+            outline: 0;
+            overflow: auto;
+            background: transparent;
+            color: transparent;
+            caret-color: var(--theme-fg);
+        }
+    }
+
+    // ---- In-component dialog ----
+    .dialog-backdrop {
+        position: absolute;
+        inset: 0;
+        z-index: 40;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: color-mix(in srgb, var(--theme-bg) 55%, transparent);
+    }
+
+    .dialog-box {
+        min-width: 320px;
+        max-width: 80%;
+        background: var(--theme-bg-more, #262b33);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        box-shadow: 0 12px 48px rgba(0, 0, 0, 0.5);
+        overflow: hidden;
+
+        .dialog-title {
+            padding: 11px 16px;
+            font-weight: 600;
+            border-bottom: 1px solid var(--line);
+        }
+        .dialog-body {
+            padding: 16px;
+            word-break: break-all;
+            .dialog-label {
+                display: block;
+                margin-bottom: 6px;
+                color: var(--theme-fg-less);
+            }
+        }
+        .dialog-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            padding: 11px 16px;
+            border-top: 1px solid var(--line);
+        }
+    }
+
+    // ---- Transfer queue ----
+    .queue {
+        flex: 0 0 auto;
+        max-height: 30%;
+        overflow-y: auto;
+        border-top: 1px solid var(--line);
+        font-size: 12px;
+
+        .queue-header {
+            position: sticky;
+            top: 0;
+            background: var(--theme-bg-more);
+            z-index: 1;
+        }
+        .queue-item {
+            border-top: 1px solid var(--line-soft);
+        }
+        .queue-row {
+            padding-top: 4px;
+            padding-bottom: 4px;
+        }
+        .queue-pct {
+            width: 36px;
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+            color: var(--theme-fg-less);
+        }
+        .queue-bytes {
+            white-space: nowrap;
+            font-variant-numeric: tabular-nums;
+        }
+        .queue-progress {
+            height: 3px;
+            background: var(--line);
+            overflow: hidden;
+        }
+        .queue-progress-fill {
+            height: 100%;
+            background: var(--accent);
+            transition: width 0.15s linear;
+
+            &.paused { background: var(--bs-warning, #f5c518); }
+        }
+        .queue-ctl {
+            padding: 0 5px;
+            line-height: 1;
+            color: var(--theme-fg-less);
+            &:hover { color: var(--theme-fg); }
+        }
+    }
+}

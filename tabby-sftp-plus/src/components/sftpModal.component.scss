@@ -1,0 +1,40 @@
+:host {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+}
+
+.sftp-modal {
+    height: 100%;
+    width: 100%;
+    min-height: 0;
+
+    .sftp-modal-title {
+        height: 38px;
+        flex: 0 0 38px;
+        cursor: move;
+        user-select: none;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+        border-top-left-radius: 6px;
+        border-top-right-radius: 6px;
+        background: rgba(255, 255, 255, 0.04);
+
+        .fa-server { opacity: 0.7; }
+        .grip { opacity: 0.35; }
+        .close-btn { line-height: 1; }
+    }
+
+    .sftp-modal-body {
+        min-height: 0;
+        display: flex;
+        overflow: hidden;
+    }
+
+    sftp-browser {
+        display: flex;
+        flex: 1;
+        width: 100%;
+        min-height: 0;
+    }
+}
