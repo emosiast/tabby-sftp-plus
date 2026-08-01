@@ -10,8 +10,6 @@ machine on the left, the remote host on the right, drag-and-drop between them, a
 live transfer queue, an in-app editor, and a detachable always-on-top window with
 tabs — so you can manage files on several servers at once without leaving Tabby.
 
-<!-- Screenshot: hero shot — the floating SFTP+ window, dual pane, local left / remote right.
-     Save as: tabby-sftp-plus/docs/screenshots/hero.png -->
 ![Tabby SFTP+](tabby-sftp-plus/docs/screenshots/hero.png)
 
 ---
@@ -59,32 +57,6 @@ already connected on — no second login, no extra password prompt.
 - **Multiple servers, one window** — every SFTP+ you open becomes a **tab** in the
   same window; opening a server that's already open just focuses its tab.
 - Fully **theme-aware** (adapts to light and dark Tabby themes).
-
----
-
-## Screenshots
-
-<!-- Replace each placeholder below with a real capture. Folder: tabby-sftp-plus/docs/screenshots/ -->
-
-**Dual-pane, local ⇄ remote**
-<!-- Screenshot: the SFTP+ tab or window with both panes populated. Save as: tabby-sftp-plus/docs/screenshots/dual-pane.png -->
-![Dual pane](tabby-sftp-plus/docs/screenshots/dual-pane.png)
-
-**Tabs — several servers in one window**
-<!-- Screenshot: the floating window with 2+ tabs in the title bar. Save as: tabby-sftp-plus/docs/screenshots/tabs.png -->
-![Tabs](tabby-sftp-plus/docs/screenshots/tabs.png)
-
-**Transfer queue with progress**
-<!-- Screenshot: bottom transfer queue mid-transfer, progress bars + pause/cancel buttons visible. Save as: tabby-sftp-plus/docs/screenshots/transfers.png -->
-![Transfers](tabby-sftp-plus/docs/screenshots/transfers.png)
-
-**Built-in editor with syntax highlighting**
-<!-- Screenshot: the in-app editor overlay open on a remote file. Save as: tabby-sftp-plus/docs/screenshots/editor.png -->
-![Editor](tabby-sftp-plus/docs/screenshots/editor.png)
-
-**Right-click context menu**
-<!-- Screenshot: context menu open over a file/folder. Save as: tabby-sftp-plus/docs/screenshots/context-menu.png -->
-![Context menu](tabby-sftp-plus/docs/screenshots/context-menu.png)
 
 ---
 

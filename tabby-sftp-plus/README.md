@@ -10,8 +10,6 @@ machine on the left, the remote host on the right, drag-and-drop between them, a
 live transfer queue, an in-app editor, and a detachable always-on-top window with
 tabs — so you can manage files on several servers at once without leaving Tabby.
 
-<!-- Screenshot: hero shot — the floating SFTP+ window, dual pane, local left / remote right.
-     Save as: docs/screenshots/hero.png -->
 ![Tabby SFTP+](docs/screenshots/hero.png)
 
 ---
@@ -59,32 +57,6 @@ already connected on — no second login, no extra password prompt.
 - **Multiple servers, one window** — every SFTP+ you open becomes a **tab** in the
   same window; opening a server that's already open just focuses its tab.
 - Fully **theme-aware** (adapts to light and dark Tabby themes).
-
----
-
-## Screenshots
-
-<!-- Replace each placeholder below with a real capture. Suggested folder: docs/screenshots/ -->
-
-**Dual-pane, local ⇄ remote**
-<!-- Screenshot: the SFTP+ tab or window with both panes populated. Save as: docs/screenshots/dual-pane.png -->
-![Dual pane](docs/screenshots/dual-pane.png)
-
-**Tabs — several servers in one window**
-<!-- Screenshot: the floating window with 2+ tabs in the title bar. Save as: docs/screenshots/tabs.png -->
-![Tabs](docs/screenshots/tabs.png)
-
-**Transfer queue with progress**
-<!-- Screenshot: bottom transfer queue mid-transfer, progress bars + pause/cancel buttons visible. Save as: docs/screenshots/transfers.png -->
-![Transfers](docs/screenshots/transfers.png)
-
-**Built-in editor with syntax highlighting**
-<!-- Screenshot: the in-app editor overlay open on a remote file. Save as: docs/screenshots/editor.png -->
-![Editor](docs/screenshots/editor.png)
-
-**Right-click context menu**
-<!-- Screenshot: context menu open over a file/folder. Save as: docs/screenshots/context-menu.png -->
-![Context menu](docs/screenshots/context-menu.png)
 
 ---
 
