@@ -45,6 +45,12 @@ jobs:
           yarn run build
           node scripts/prepackage-plugins.mjs
 
+      - name: Download Visual C++ Redistributable
+        shell: bash
+        run: |
+          curl -sSL -o build/vc_redist.exe "https://aka.ms/vs/17/release/vc_redist.x64.exe"
+          ls -la build/vc_redist.exe
+
       - name: Package
         run: node scripts/build-windows.mjs
 
