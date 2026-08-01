@@ -1,0 +1,115 @@
+name: Release (fork)
+
+# Builds unsigned Windows + Linux (x64) packages when you push a version tag
+# (e.g. `git tag v1.0.0 && git push --tags`) and attaches them to a DRAFT
+# GitHub Release for you to review and publish.
+#
+# No signing / notarization / Sentry / packagecloud — those need secrets the
+# upstream project owns. Without them electron-builder produces unsigned builds
+# with auto-update disabled, which is exactly what a fork wants.
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  Windows:
+    runs-on: windows-2022
+    env:
+      ARCH: x64
+      RUST_TARGET_TRIPLE: x86_64-pc-windows-msvc
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0        # git describe needs full history + tags
+
+      - uses: actions/setup-node@v4.4.0
+        with:
+          node-version: 22
+
+      - run: rustup target add x86_64-pc-windows-msvc
+
+      - name: Update node-gyp
+        run: |
+          npm install --global node-gyp@10.2.0
+          npm prefix -g | % {npm config set node_gyp "$_\node_modules\node-gyp\bin\node-gyp.js"}
+
+      - name: Build
+        run: |
+          npm i -g yarn node-gyp
+          yarn --network-timeout 1000000
+          yarn run build
+          node scripts/prepackage-plugins.mjs
+
+      - name: Package
+        run: node scripts/build-windows.mjs
+
+      - name: Collect artifacts
+        shell: bash
+        run: |
+          mkdir out
+          mv dist/*-setup-*.exe out/ 2>/dev/null || true
+          mv dist/*-portable-*.zip out/ 2>/dev/null || true
+          ls -la out
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          files: out/*
+          fail_on_unmatched_files: false
+
+  Linux:
+    runs-on: ubuntu-24.04
+    env:
+      ARCH: x64
+      npm_config_arch: x64
+      npm_config_target_arch: x64
+      RUST_TARGET_TRIPLE: x86_64-unknown-linux-gnu
+      USE_HARD_LINKS: false
+      USE_SYSTEM_FPM: true
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4.4.0
+        with:
+          node-version: 22
+
+      - name: Install FPM
+        run: sudo gem install fpm
+
+      - run: rustup target add x86_64-unknown-linux-gnu
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libfontconfig1-dev libsecret-1-dev libarchive-tools zsh
+
+      - name: Build
+        run: |
+          npm i -g yarn
+          yarn --network-timeout 1000000
+          yarn run build
+          node scripts/prepackage-plugins.mjs
+
+      - name: Package
+        run: node scripts/build-linux.mjs
+
+      - name: Collect artifacts
+        run: |
+          mkdir out
+          for ext in deb tar.gz AppImage rpm pacman; do
+            mv dist/*.$ext out/ 2>/dev/null || true
+          done
+          ls -la out
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          files: out/*
+          fail_on_unmatched_files: false
