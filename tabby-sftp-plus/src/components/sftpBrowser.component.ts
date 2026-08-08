@@ -758,7 +758,10 @@ export class SftpBrowserComponent extends BaseComponent {
 
     /** Short label for a bookmark chip — the last path segment (or the path itself for roots). */
     bookmarkLabel (path: string): string {
-        const base = path.replace(/[/\\]+$/, '').split(/[/\\]/).pop()
+        // Split on separator runs and take the last non-empty segment.
+        // (Avoids an anchored `/[/\\]+$/` trim, which backtracks O(n²) on paths
+        // made of many separators — a ReDoS.)
+        const base = path.split(/[/\\]+/).filter(Boolean).pop()
         return base || path
     }
 
@@ -966,7 +969,7 @@ export class SftpBrowserComponent extends BaseComponent {
 
     /** Language-agnostic tokenizer: strings, comments, numbers, and a broad keyword set. */
     // eslint-disable-next-line max-len
-    private static readonly TOKEN = /(?<comment>#[^\n]*|\/\/[^\n]*|\/\*[\s\S]*?\*\/|<!--[\s\S]*?-->)|(?<string>"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|`(?:[^`\\]|\\.)*`)|(?<number>\b\d[\d_]*(?:\.\d+)?\b)|(?<keyword>\b(?:if|else|elif|fi|then|do|done|for|while|switch|case|esac|break|continue|return|function|func|fn|const|let|var|def|class|struct|interface|enum|import|from|export|require|module|package|public|private|protected|static|void|int|float|double|char|string|bool|boolean|true|false|null|nil|none|and|or|not|in|is|new|delete|async|await|try|catch|except|finally|throw|raise|with|as|yield|lambda|echo|print|local|set|unset|source)\b)/g
+    private static readonly TOKEN = /(?<comment>#[^\n]*|\/\/[^\n]*|\/\*[\s\S]{0,5000}?\*\/|<!--[\s\S]{0,5000}?-->)|(?<string>"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|`(?:[^`\\]|\\.)*`)|(?<number>\b\d[\d_]*(?:\.\d+)?\b)|(?<keyword>\b(?:if|else|elif|fi|then|do|done|for|while|switch|case|esac|break|continue|return|function|func|fn|const|let|var|def|class|struct|interface|enum|import|from|export|require|module|package|public|private|protected|static|void|int|float|double|char|string|bool|boolean|true|false|null|nil|none|and|or|not|in|is|new|delete|async|await|try|catch|except|finally|throw|raise|with|as|yield|lambda|echo|print|local|set|unset|source)\b)/g
 
     highlightEditor (): void {
         this.editorHtml = this.editor ? SftpBrowserComponent.highlight(this.editor.content) : ''
@@ -978,6 +981,12 @@ export class SftpBrowserComponent extends BaseComponent {
 
     private static highlight (code: string): string {
         const esc = SftpBrowserComponent.escapeHtml
+        // Cap tokenizer input: the comment patterns are bounded ({0,5000}) so they
+        // can't blow up quadratically, but keep total regex work bounded regardless
+        // of file size — very large buffers just render uncolored (still editable).
+        if (code.length > 100000) {
+            return esc(code)
+        }
         let out = ''
         let last = 0
         for (const m of code.matchAll(SftpBrowserComponent.TOKEN)) {
